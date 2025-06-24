@@ -1,4 +1,4 @@
-// backend/server.js
+// server/server.js
 
 import express from 'express';
 import bodyParser from 'body-parser';
@@ -9,161 +9,97 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
-// Allowed frontend origins (update if you host elsewhere)
+// CORS setup
 const allowedOrigins = [
-    'http://localhost:5173', // Local dev
-    'https://edizo-in.github.io', // GitHub Pages root
-    'https://edizo-in.github.io/main-web' // Specific subpath if needed
+  'http://localhost:5173',
+  'https://edizo-in.github.io',
+  'https://edizo-in.github.io/main-web'
 ];
 
-// --- Middleware ---
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-        return callback(new Error('CORS policy does not allow access from this origin'), false);
-    },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    optionsSuccessStatus: 204
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS policy does not allow this origin'), false);
+  }
 }));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// --- Email Sending Logic ---
+// Email sending logic
 async function sendEmail(emailDetails) {
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-        }
-    });
-
-    let subject = '';
-    let htmlContent = '';
-    let recipient = emailDetails.recipientEmail || emailDetails.email;
-
-    if (!recipient) throw new Error('Recipient email not provided.');
-
-    switch (emailDetails.type) {
-        case 'applicationConfirmation': {
-            const { name, internshipTitle } = emailDetails;
-            subject = `Application Confirmation - ${internshipTitle || 'Internship'}`;
-            htmlContent = `
-                <div style="font-family: Arial; color: #333;">
-                    <h2>Thank you for your Application, ${name}!</h2>
-                    <p>We have successfully received your application for the <strong>${internshipTitle}</strong> at E.D.I.Z.O.</p>
-                    <p>Our team will review your application throughly and get in touch with you regarding the next steps.</p>
-                    <p> In the meantime,if you have any questions,please do not heasitate to contact us</p>
-                    <p>Best regards,</p>
-                    <p>The E.D.I.Z.O Team</p>
-                </div>
-            `;
-            break;
-        }
-        case 'internshipApplicationNotification': {
-            const {
-                name, email, phone, education, experience,
-                message, internshipTitle
-            } = emailDetails;
-            recipient = process.env.INTERNSHIP_RECIPIENT_EMAIL || process.env.EMAIL_USER;
-            subject = `New Internship Application - ${internshipTitle}`;
-            htmlContent = `
-                <div style="font-family: Arial; color: #333;">
-                    <h2>New Application for ${internshipTitle}</h2>
-                    <p><strong>Name:</strong> ${name}</p>
-                    <p><strong>Email:</strong> ${email}</p>
-                    <p><strong>Phone:</strong> ${phone}</p>
-                    <p><strong>Education:</strong> ${education}</p>
-                    <p><strong>Experience:</strong></p>
-                    <pre>${experience}</pre>
-                    <p><strong>Message:</strong></p>
-                    <pre>${message}</pre>
-                </div>
-            `;
-            break;
-        }
-        case 'contactForm': {
-            const { name, email, phone, subject: contactSubject, message } = emailDetails;
-            subject = `Contact Form: ${contactSubject}`;
-            htmlContent = `
-                <div style="font-family: Arial; color: #333;">
-                    <h2>New Contact Message</h2>
-                    <p><strong>Name:</strong> ${name}</p>
-                    <p><strong>Email:</strong> ${email}</p>
-                    <p><strong>Phone:</strong> ${phone}</p>
-                    <p><strong>Subject:</strong> ${contactSubject}</p>
-                    <p><strong>Message:</strong></p>
-                    <pre>${message}</pre>
-                </div>
-            `;
-            break;
-        }
-        case 'custom': {
-            subject = emailDetails.subject || 'No Subject';
-            htmlContent = emailDetails.htmlContent || '<p>No content provided.</p>';
-            break;
-        }
-        default:
-            subject = emailDetails.subject || 'Generic Notification';
-            htmlContent = '<p>This is a default fallback email.</p>';
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
     }
+  });
 
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: recipient,
-        subject,
-        html: htmlContent
-    };
+  let subject = '';
+  let htmlContent = '';
+  let recipient = emailDetails.recipientEmail || emailDetails.email;
 
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent to ${recipient} with subject "${subject}"`);
+  switch (emailDetails.type) {
+    case 'applicationConfirmation':
+      subject = `Application Confirmation - ${emailDetails.internshipTitle || 'Internship'}`;
+      htmlContent = `<p>Thank you ${emailDetails.name} for applying...</p>`;
+      break;
+    case 'internshipApplicationNotification':
+      recipient = process.env.INTERNSHIP_RECIPIENT_EMAIL || process.env.EMAIL_USER;
+      subject = `New Internship Application - ${emailDetails.internshipTitle}`;
+      htmlContent = `<p>New application received...</p>`;
+      break;
+    case 'contactForm':
+      subject = `Contact Form: ${emailDetails.subject}`;
+      htmlContent = `<p>Contact message from ${emailDetails.name}</p>`;
+      break;
+    default:
+      subject = emailDetails.subject || 'Notification';
+      htmlContent = emailDetails.htmlContent || '<p>No content</p>';
+  }
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: recipient,
+    subject,
+    html: htmlContent
+  });
 }
 
-// --- Routes ---
-
-// Internship Email Handler
+// Routes
 app.post('/send-email', async (req, res, next) => {
-    try {
-        await sendEmail(req.body);
-        res.status(200).json({ success: true, message: 'Email sent successfully!' });
-    } catch (error) {
-        console.error('❌ Error sending email:', error);
-        next(error);
-    }
+  try {
+    await sendEmail(req.body);
+    res.status(200).json({ success: true, message: 'Email sent successfully!' });
+  } catch (err) {
+    next(err);
+  }
 });
 
-// Contact Form Handler
 app.post('/send-contact-email', async (req, res, next) => {
-    try {
-        const recipient = process.env.CONTACT_FORM_RECIPIENT_EMAIL || process.env.EMAIL_USER;
-        await sendEmail({
-            ...req.body,
-            type: 'contactForm',
-            recipientEmail: recipient
-        });
-        res.status(200).json({ success: true, message: 'Contact email sent!' });
-    } catch (error) {
-        console.error('❌ Error sending contact email:', error);
-        next(error);
-    }
-});
-
-// --- Error Handler ---
-app.use((err, req, res, next) => {
-    console.error('Global Error Handler:', err.stack);
-    res.status(err.status || 500).json({
-        success: false,
-        message: err.message || 'Internal server error'
+  try {
+    const recipient = process.env.CONTACT_FORM_RECIPIENT_EMAIL || process.env.EMAIL_USER;
+    await sendEmail({
+      ...req.body,
+      type: 'contactForm',
+      recipientEmail: recipient
     });
+    res.status(200).json({ success: true, message: 'Contact email sent!' });
+  } catch (err) {
+    next(err);
+  }
 });
 
-// --- Start Server ---
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+app.use((err, req, res, next) => {
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Server Error'
+  });
 });
+
+// ✅ Export app for Vercel
+export default app;

@@ -6,7 +6,8 @@ import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename="/main-web" >
+    {/* ✅ Remove basename when not using GitHub Pages */}
+    <BrowserRouter>
       <App />
     </BrowserRouter>
   </StrictMode>
