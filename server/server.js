@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3001;
 const allowedOrigins = [
     'http://localhost:5173', // Local dev
     'https://edizo-in.github.io', // GitHub Pages root
-    'https://edizo-in.github.io/Main-Webpage' // Specific subpath if needed
+    'https://edizo-in.github.io/main-web' // Specific subpath if needed
 ];
 
 // --- Middleware ---
