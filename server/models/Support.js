@@ -47,10 +47,9 @@ const SupportSchema = new mongoose.Schema({
   }
 });
 
-// Generate a unique ticket number before saving
-SupportSchema.pre('save', function(next) {
+// Auto-generate ticket number & update timestamp
+SupportSchema.pre('save', function (next) {
   if (!this.ticketNumber) {
-    // Generate a random string for ticket number
     const timestamp = new Date().getTime().toString().slice(-6);
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     this.ticketNumber = `EDZ-${timestamp}-${random}`;
@@ -59,6 +58,5 @@ SupportSchema.pre('save', function(next) {
   next();
 });
 
-const Support = mongoose.model('Support', SupportSchema);
-
-export default Support;
+// Avoid model overwrite on hot reload
+export default mongoose.models.Support || mongoose.model('Support', SupportSchema);

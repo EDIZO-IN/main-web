@@ -3,7 +3,6 @@
   "version": "1.0.1",
   "private": true,
   "type": "module",
-  "homepage": "https://EDIZO-IN.github.io/main-web",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -26,7 +25,6 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "eslint": "^9.9.1",
-    "gh-pages": "^6.3.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.5.3",
