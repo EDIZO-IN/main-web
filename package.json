@@ -2,12 +2,15 @@
   "name": "edizo-fullstack-app",
   "version": "1.1.1",
   "private": true,
-  "homepage": "https://edizolearn.netlify.app",
+  "homepage": "https://EDIZO-IN.github.io/main-web",
   "scripts": {
-    "dev": "netlify dev",                         
-    "build": "npm run build --prefix frontend",   
-    "start": "netlify dev",                       
-    "deploy": "netlify deploy --prod"             
+    "client": "npm run dev --prefix frontend",
+    "server": "npm start --prefix server",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "build": "npm run build --prefix frontend",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d frontend/dist",
+    "start": "npm run dev"
   },
   "browserslist": {
     "production": [
@@ -25,15 +28,13 @@
     "browserslist": "^4.25.0",
     "concurrently": "^9.1.2",
     "gh-pages": "^6.3.0",
-    "netlify-cli": "^17.24.0",                    
     "postcss": "^8.5.4",
     "postcss-preset-env": "^10.2.0"
   },
   "dependencies": {
-    "axios": "^1.6.7",                            
+    "framer-motion": "^12.15.0",
     "lucide-react": "^0.511.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.1"
   }
 }

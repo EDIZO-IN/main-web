@@ -33,5 +33,6 @@ const ContactSchema = new mongoose.Schema({
   }
 });
 
-// Prevent model overwrite on hot reload
-export default mongoose.models.Contact || mongoose.model('Contact', ContactSchema);
+const Contact = mongoose.model('Contact', ContactSchema);
+
+export default Contact;
